@@ -1,0 +1,44 @@
+{
+  "manifest_version": "0.2",
+  "name": "ubuntu-shell-mcp",
+  "version": "1.0.0",
+  "description": "Execute bash commands on a remote Ubuntu server via SSH",
+  "author": {
+    "name": "Carlos"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.js",
+        "--host",
+        "${user_config.ssh_host}",
+        "--user",
+        "${user_config.ssh_user}"
+      ]
+    }
+  },
+  "user_config": {
+    "ssh_host": {
+      "title": "SSH Host",
+      "description": "Hostname or IP address of the Ubuntu server (e.g., 'ubuntupc' or '192.168.1.100')",
+      "type": "string",
+      "required": true
+    },
+    "ssh_user": {
+      "title": "SSH Username",
+      "description": "Username for SSH connection (e.g., 'carlos')",
+      "type": "string",
+      "required": true
+    }
+  },
+  "tools": [
+    {
+      "name": "bash",
+      "description": "Execute a bash command on the Ubuntu server"
+    }
+  ],
+  "license": "MIT"
+}
