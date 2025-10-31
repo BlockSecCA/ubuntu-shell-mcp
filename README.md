@@ -363,9 +363,42 @@ ubuntu-shell-mcp-ssh2/
 ├── package.json           # Node.js dependencies (includes ssh2)
 ├── server/
 │   └── index.js          # MCP server implementation with ssh2
+├── tools/
+│   ├── mcp-log-viewer.html  # Visual log analyzer (see below)
+│   └── LOG_VIEWER.md        # Log viewer documentation
 ├── README.md             # This file
 └── LICENSE               # MIT License
 ```
+
+## Development Tools
+
+### MCP Log Viewer
+
+A visual tool for analyzing MCP server logs. Located in `tools/mcp-log-viewer.html`.
+
+**Features:**
+- 📊 Statistics dashboard (commands, messages, lifecycle events)
+- 🔍 Smart filtering (All, Lifecycle, Client, Server, Commands)
+- 🎨 Color-coded entries for easy scanning
+- 📝 Detailed inspection with JSON viewer
+- ⚡ Handles logs up to 1MB
+- 🔗 Command/response pairing for easy debugging
+
+**Quick Start:**
+1. Open `tools/mcp-log-viewer.html` in your browser
+2. Upload your log file from:
+   ```
+   C:\Users\[YourUsername]\AppData\Roaming\Claude\logs\mcp-server-ubuntu-shell-mcp.log
+   ```
+3. Use filters and search to analyze your session
+
+**Common Use Cases:**
+- Debug connection issues (filter by "Lifecycle")
+- Review command history (filter by "Commands Only")
+- Analyze performance (check timestamps between request/response)
+- Audit trail (see all executed commands with results)
+
+See [tools/LOG_VIEWER.md](tools/LOG_VIEWER.md) for detailed documentation.
 
 ## Development
 
@@ -387,7 +420,13 @@ The MCP server logs to stderr with detailed information:
 - `[ERROR]` - Error conditions
 - `[SHUTDOWN]` - Graceful shutdown
 
-View logs in Claude Desktop's developer console or logs directory.
+**Log Location:**
+```
+C:\Users\[YourUsername]\AppData\Roaming\Claude\logs\mcp-server-ubuntu-shell-mcp.log
+```
+
+**Visual Log Analysis:**
+Use the included [MCP Log Viewer](tools/mcp-log-viewer.html) for easy visual inspection of logs. It provides filtering, search, and detailed entry inspection. See the [Development Tools](#development-tools) section above.
 
 ## Troubleshooting
 

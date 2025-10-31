@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Log Viewer</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        function App() {
+            const [logContent, setLogContent] = useState('');
+            const [filter, setFilter] = useState('all');
+            const [searchTerm, setSearchTerm] = useState('');
+            const [selectedEntry, setSelectedEntry] = useState(null);
+            const [showRaw, setShowRaw] = useState(false);
+            const [isLoading, setIsLoading] = useState(false);
+            const [fileName, setFileName] = useState('');
+
+            const parseLogEntry = (line) => {
+                // More flexible regex to handle the metadata at the end
+                const match = line.match(/^(\S+)\s+\[([^\]]+)\]\s+\[([^\]]+)\]\s+(.+?)(?:\s+\{[^}]*\}\s*)?$/);
+                if (!match) {
+                    console.log('Failed to parse line:', line.substring(0, 100));
+                    return null;
+                }
+
+                const [, timestamp, serverName, logLevel, message] = match;
+                
+                let parsedMessage = message.trim();
+                let jsonData = null;
+                let messageType = 'lifecycle';
+
+                if (message.includes('Message from client:') || message.includes('Message from server:')) {
+                    const direction = message.includes('Message from client:') ? 'client' : 'server';
+                    const jsonMatch = message.match(/Message from (?:client|server):\s*(\{.+)/);
+                    if (jsonMatch) {
+                        try {
+                            jsonData = JSON.parse(jsonMatch[1]);
+                            messageType = direction;
+                            parsedMessage = direction === 'client' ? 'Message from client' : 'Message from server';
+                        } catch (e) {
+                            console.log('Failed to parse JSON:', e.message);
+                        }
+                    }
+                }
+
+                return {
+                    timestamp,
+                    serverName,
+                    logLevel,
+                    message: parsedMessage,
+                    messageType,
+                    jsonData,
+                    raw: line
+                };
+            };
+
+            const logEntries = useMemo(() => {
+                if (!logContent) return [];
+                console.log('Parsing log content, length:', logContent.length);
+                const lines = logContent.split('\n').filter(line => line.trim());
+                console.log('Total lines:', lines.length);
+                const parsed = lines.map(parseLogEntry).filter(entry => entry !== null);
+                console.log('Parsed entries:', parsed.length);
+                return parsed;
+            }, [logContent]);
+
+            const filteredEntries = useMemo(() => {
+                // For commands filter, combine commands with their responses
+                if (filter === 'commands') {
+                    const commandMap = new Map();
+                    
+                    // First pass: organize by ID
+                    logEntries.forEach(entry => {
+                        if (entry.jsonData?.id !== undefined) {
+                            const id = entry.jsonData.id;
+                            if (!commandMap.has(id)) {
+                                commandMap.set(id, { command: null, response: null });
+                            }
+                            
+                            if (entry.jsonData.method === 'tools/call') {
+                                commandMap.get(id).command = entry;
+                            } else if (entry.messageType === 'server' && entry.jsonData.result) {
+                                commandMap.get(id).response = entry;
+                            }
+                        }
+                    });
+                    
+                    // Second pass: create combined entries
+                    const combined = [];
+                    commandMap.forEach((pair, id) => {
+                        if (pair.command) {
+                            // Create a combined entry
+                            const combinedEntry = {
+                                ...pair.command,
+                                responseData: pair.response,
+                                isCombined: true
+                            };
+                            combined.push(combinedEntry);
+                        }
+                    });
+                    
+                    // Apply search filter
+                    return combined.filter(entry => {
+                        if (searchTerm) {
+                            const searchLower = searchTerm.toLowerCase();
+                            const matchInCommand = entry.raw.toLowerCase().includes(searchLower);
+                            const matchInResponse = entry.responseData?.raw?.toLowerCase().includes(searchLower);
+                            return matchInCommand || matchInResponse;
+                        }
+                        return true;
+                    });
+                }
+                
+                // For other filters (including 'all'), maintain chronological order
+                return logEntries.filter(entry => {
+                    // Apply type filter (skip for 'all')
+                    if (filter === 'lifecycle' && entry.messageType !== 'lifecycle') return false;
+                    if (filter === 'client' && entry.messageType !== 'client') return false;
+                    if (filter === 'server' && entry.messageType !== 'server') return false;
+                    
+                    // Apply search filter
+                    if (searchTerm) {
+                        const searchLower = searchTerm.toLowerCase();
+                        return entry.raw.toLowerCase().includes(searchLower);
+                    }
+                    
+                    return true;
+                });
+            }, [logEntries, filter, searchTerm]);
+
+            const handleFileUpload = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    console.log('File selected:', file.name, file.size);
+                    setFileName(file.name);
+                    
+                    if (file.size > 1024 * 1024) {
+                        alert('File is too large! Maximum size is 1MB.');
+                        return;
+                    }
+                    
+                    setIsLoading(true);
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        console.log('File loaded, length:', e.target.result.length);
+                        setLogContent(e.target.result);
+                        setIsLoading(false);
+                    };
+                    reader.onerror = (e) => {
+                        console.error('Error reading file:', e);
+                        alert('Error reading file!');
+                        setIsLoading(false);
+                    };
+                    reader.readAsText(file);
+                }
+            };
+
+            const stats = useMemo(() => {
+                const commandCount = logEntries.filter(e => e.jsonData?.method === 'tools/call').length;
+                const clientMessages = logEntries.filter(e => e.messageType === 'client').length;
+                const serverMessages = logEntries.filter(e => e.messageType === 'server').length;
+                const lifecycleEvents = logEntries.filter(e => e.messageType === 'lifecycle').length;
+                
+                return { commandCount, clientMessages, serverMessages, lifecycleEvents, total: logEntries.length };
+            }, [logEntries]);
+
+            const formatTimestamp = (timestamp) => {
+                const date = new Date(timestamp);
+                return date.toLocaleString();
+            };
+
+            const JsonViewer = ({ data, title }) => (
+                <div className="mt-2">
+                    <div className="text-xs font-semibold text-gray-600 mb-1">{title}</div>
+                    <pre className="bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto">
+                        {JSON.stringify(data, null, 2)}
+                    </pre>
+                </div>
+            );
+
+            const LogEntryCard = ({ entry, onClick }) => {
+                const isCombined = entry.isCombined;
+                const bgColor = entry.messageType === 'client' ? 'bg-blue-50 border-blue-200' :
+                               entry.messageType === 'server' ? 'bg-green-50 border-green-200' :
+                               'bg-gray-50 border-gray-200';
+                
+                const badgeColor = entry.messageType === 'client' ? 'bg-blue-500' :
+                                  entry.messageType === 'server' ? 'bg-green-500' :
+                                  'bg-gray-500';
+
+                const getCommandSummary = () => {
+                    if (entry.jsonData?.method === 'tools/call') {
+                        return entry.jsonData.params?.arguments?.command || 'Command';
+                    }
+                    if (entry.jsonData?.method) {
+                        return entry.jsonData.method;
+                    }
+                    if (entry.jsonData?.result) {
+                        return 'Result';
+                    }
+                    return entry.message;
+                };
+
+                const getResultPreview = () => {
+                    if (entry.responseData?.jsonData?.result?.content?.[0]?.text) {
+                        const resultText = entry.responseData.jsonData.result.content[0].text;
+                        return resultText.substring(0, 100) + (resultText.length > 100 ? '...' : '');
+                    }
+                    return null;
+                };
+
+                return (
+                    <div 
+                        className={`border ${bgColor} rounded-lg p-3 mb-2 cursor-pointer hover:shadow-md transition-shadow`}
+                        onClick={() => onClick(entry)}
+                    >
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className={`${badgeColor} text-white text-xs px-2 py-1 rounded`}>
+                                        {isCombined ? 'command' : entry.messageType}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                        {formatTimestamp(entry.timestamp)}
+                                    </span>
+                                    {entry.jsonData?.id !== undefined && (
+                                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                                            ID: {entry.jsonData.id}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="text-sm font-mono text-gray-800 mb-1">
+                                    {getCommandSummary()}
+                                </div>
+                                {isCombined && getResultPreview() && (
+                                    <div className="text-xs text-gray-600 bg-green-50 px-2 py-1 rounded mt-2 font-mono">
+                                        <span className="font-semibold">Result: </span>
+                                        {getResultPreview()}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-100 p-4">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-4">
+                            <h1 className="text-3xl font-bold text-gray-800 mb-4">
+                                🔍 MCP Log Viewer
+                            </h1>
+                            
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Upload Log File (max 1MB)
+                                </label>
+                                <input
+                                    type="file"
+                                    accept=".log,.txt"
+                                    onChange={handleFileUpload}
+                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                />
+                                {isLoading && (
+                                    <div className="mt-2 text-sm text-blue-600">
+                                        Loading file...
+                                    </div>
+                                )}
+                                {fileName && !isLoading && (
+                                    <div className="mt-2 text-sm text-green-600">
+                                        ✓ Loaded: {fileName}
+                                    </div>
+                                )}
+                            </div>
+
+                            {logEntries.length > 0 && (
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                                    <div className="bg-gray-50 p-3 rounded">
+                                        <div className="text-xs text-gray-600">Total Entries</div>
+                                        <div className="text-2xl font-bold text-gray-800">{stats.total}</div>
+                                    </div>
+                                    <div className="bg-blue-50 p-3 rounded">
+                                        <div className="text-xs text-blue-600">Client Messages</div>
+                                        <div className="text-2xl font-bold text-blue-700">{stats.clientMessages}</div>
+                                    </div>
+                                    <div className="bg-green-50 p-3 rounded">
+                                        <div className="text-xs text-green-600">Server Messages</div>
+                                        <div className="text-2xl font-bold text-green-700">{stats.serverMessages}</div>
+                                    </div>
+                                    <div className="bg-purple-50 p-3 rounded">
+                                        <div className="text-xs text-purple-600">Commands</div>
+                                        <div className="text-2xl font-bold text-purple-700">{stats.commandCount}</div>
+                                    </div>
+                                    <div className="bg-gray-50 p-3 rounded">
+                                        <div className="text-xs text-gray-600">Lifecycle Events</div>
+                                        <div className="text-2xl font-bold text-gray-700">{stats.lifecycleEvents}</div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {logEntries.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    <input
+                                        type="text"
+                                        placeholder="Search logs..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="flex-1 min-w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                    <button
+                                        onClick={() => setFilter('all')}
+                                        className={`px-4 py-2 rounded ${filter === 'all' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700'}`}
+                                    >
+                                        All
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('lifecycle')}
+                                        className={`px-4 py-2 rounded ${filter === 'lifecycle' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700'}`}
+                                    >
+                                        Lifecycle
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('client')}
+                                        className={`px-4 py-2 rounded ${filter === 'client' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'}`}
+                                    >
+                                        Client
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('server')}
+                                        className={`px-4 py-2 rounded ${filter === 'server' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700'}`}
+                                    >
+                                        Server
+                                    </button>
+                                    <button
+                                        onClick={() => setFilter('commands')}
+                                        className={`px-4 py-2 rounded ${filter === 'commands' ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-700'}`}
+                                    >
+                                        Commands Only
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {logEntries.length > 0 && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <div className="bg-white rounded-lg shadow-lg p-4">
+                                    <h2 className="text-xl font-bold text-gray-800 mb-3">
+                                        Log Entries ({filteredEntries.length})
+                                    </h2>
+                                    <div className="max-h-[600px] overflow-y-auto">
+                                        {filteredEntries.map((entry, index) => (
+                                            <LogEntryCard 
+                                                key={index} 
+                                                entry={entry} 
+                                                onClick={setSelectedEntry}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-lg p-4 sticky top-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h2 className="text-xl font-bold text-gray-800">
+                                            Entry Details
+                                        </h2>
+                                        {selectedEntry && (
+                                            <button
+                                                onClick={() => setShowRaw(!showRaw)}
+                                                className="text-sm px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                                            >
+                                                {showRaw ? 'Formatted' : 'Raw'}
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    {selectedEntry ? (
+                                        <div className="max-h-[600px] overflow-y-auto">
+                                            {showRaw ? (
+                                                <pre className="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-x-auto">
+                                                    {selectedEntry.raw}
+                                                </pre>
+                                            ) : (
+                                                <>
+                                                    <div className="mb-4">
+                                                        <div className="text-xs text-gray-600 font-semibold">Timestamp</div>
+                                                        <div className="text-sm">{formatTimestamp(selectedEntry.timestamp)}</div>
+                                                    </div>
+                                                    
+                                                    <div className="mb-4">
+                                                        <div className="text-xs text-gray-600 font-semibold">Type</div>
+                                                        <div className="text-sm">{selectedEntry.messageType}</div>
+                                                    </div>
+                                                    
+                                                    <div className="mb-4">
+                                                        <div className="text-xs text-gray-600 font-semibold">Message</div>
+                                                        <div className="text-sm">{selectedEntry.message}</div>
+                                                    </div>
+                                                    
+                                                    {selectedEntry.jsonData && (
+                                                        <>
+                                                            {selectedEntry.jsonData.method && (
+                                                                <div className="mb-4">
+                                                                    <div className="text-xs text-gray-600 font-semibold">Method</div>
+                                                                    <div className="text-sm font-mono bg-purple-50 px-2 py-1 rounded">
+                                                                        {selectedEntry.jsonData.method}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            
+                                    {selectedEntry.jsonData.params?.arguments?.command && (
+                                                                <div className="mb-4">
+                                                                    <div className="text-xs text-gray-600 font-semibold">Command</div>
+                                                                    <pre className="text-sm font-mono bg-yellow-50 px-3 py-2 rounded overflow-x-auto">
+                                                                        {selectedEntry.jsonData.params.arguments.command}
+                                                                    </pre>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {selectedEntry.responseData?.jsonData?.result?.content && (
+                                                                <div className="mb-4">
+                                                                    <div className="text-xs text-gray-600 font-semibold">Command Result</div>
+                                                                    <pre className="text-sm font-mono bg-green-50 px-3 py-2 rounded overflow-x-auto whitespace-pre-wrap">
+                                                                        {selectedEntry.responseData.jsonData.result.content[0]?.text}
+                                                                    </pre>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {selectedEntry.jsonData.result?.content && !selectedEntry.responseData && (
+                                                                <div className="mb-4">
+                                                                    <div className="text-xs text-gray-600 font-semibold">Result</div>
+                                                                    <pre className="text-sm font-mono bg-green-50 px-3 py-2 rounded overflow-x-auto whitespace-pre-wrap">
+                                                                        {selectedEntry.jsonData.result.content[0]?.text}
+                                                                    </pre>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            <JsonViewer data={selectedEntry.jsonData} title="Full JSON Data" />
+                                                        </>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center text-gray-500 py-8">
+                                            Select a log entry to view details
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {logEntries.length === 0 && (
+                            <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+                                <div className="text-6xl mb-4">📄</div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">No Log File Loaded</h2>
+                                <p className="text-gray-600">Upload an MCP server log file to get started</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
