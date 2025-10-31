@@ -1,8 +1,8 @@
 {
   "manifest_version": "0.2",
   "name": "ubuntu-shell-mcp",
-  "version": "1.0.0",
-  "description": "Execute bash commands on a remote Ubuntu server via SSH",
+  "version": "2.0.0",
+  "description": "Execute bash commands on a remote Ubuntu server via SSH with persistent connection",
   "author": {
     "name": "Carlos"
   },
@@ -16,22 +16,39 @@
         "--host",
         "${user_config.ssh_host}",
         "--user",
-        "${user_config.ssh_user}"
+        "${user_config.ssh_user}",
+        "--key",
+        "${user_config.ssh_key}",
+        "--timeout",
+        "${user_config.command_timeout}"
       ]
     }
   },
   "user_config": {
     "ssh_host": {
       "title": "SSH Host",
-      "description": "Hostname or IP address of the Ubuntu server (e.g., 'ubuntupc' or '192.168.1.100')",
+      "description": "Hostname or IP address of the Ubuntu server",
       "type": "string",
       "required": true
     },
     "ssh_user": {
       "title": "SSH Username",
-      "description": "Username for SSH connection (e.g., 'carlos')",
+      "description": "Username for SSH connection",
       "type": "string",
       "required": true
+    },
+    "ssh_key": {
+      "title": "SSH Private Key Path",
+      "description": "Full path to SSH private key (e.g., C:\\Users\\Carlos\\.ssh\\id_ed25519)",
+      "type": "string",
+      "required": true
+    },
+    "command_timeout": {
+      "title": "Command Timeout (seconds)",
+      "description": "Maximum time to wait for command completion (default: 15 seconds)",
+      "type": "string",
+      "required": false,
+      "default": "15"
     }
   },
   "tools": [
