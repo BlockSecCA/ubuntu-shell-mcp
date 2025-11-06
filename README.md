@@ -19,11 +19,7 @@ graph TB
         MCP -->|uses| SSH2
     end
     
-    subgraph "Network"
-        SSH2 -->|SSH Connection<br/>Port 22<br/>PERSISTENT| SSH_Daemon
-    end
-    
-    subgraph "Ubuntu Server"
+    subgraph "Ubuntu Server 192.168.1.70"
         SSH_Daemon[SSH Daemon<br/>sshd]
         Shell[Bash Shell]
         
@@ -31,6 +27,7 @@ graph TB
         Shell -->|executes| Commands[Commands & Programs]
     end
     
+    SSH2 -->|SSH Connection<br/>Port 22<br/>PERSISTENT| SSH_Daemon
     SSH_Daemon -->|stdout/stderr| SSH2
     SSH2 -->|results| MCP
     MCP -->|JSON-RPC| Claude
