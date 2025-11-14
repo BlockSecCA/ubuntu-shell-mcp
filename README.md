@@ -19,7 +19,7 @@ graph TB
         MCP -->|uses| SSH2
     end
     
-    subgraph "Ubuntu Server 192.168.1.70"
+    subgraph "Ubuntu Server your-ubuntu-server"
         SSH_Daemon[SSH Daemon<br/>sshd]
         Shell[Bash Shell]
         
@@ -199,7 +199,7 @@ This creates `ubuntu-shell-mcp-ssh2.mcpb` file.
 1. Double-click the `ubuntu-shell-mcp-ssh2.mcpb` file
 2. Claude Desktop will prompt for SSH configuration
 3. Enter:
-   - **SSH Host**: `192.168.1.70` or `ubuntuserver`
+   - **SSH Host**: `your-ubuntu-server` or `ubuntuserver`
    - **SSH Username**: `carlos`
    - **SSH Private Key Path**: `C:\Users\Carlos\.ssh\id_ed25519`
    - **Command Timeout**: `15` (or your preferred timeout in seconds)
@@ -217,7 +217,7 @@ Ask Claude to execute commands on your Ubuntu server:
 
 When installing the extension, you'll be prompted for:
 
-1. **SSH Host**: Hostname or IP address of the Ubuntu server (e.g., `192.168.1.70` or `ubuntupc`)
+1. **SSH Host**: Hostname or IP address of the Ubuntu server (e.g., `your-ubuntu-server` or `ubuntupc`)
 2. **SSH Username**: Username for SSH connection (e.g., `carlos`)
 3. **SSH Private Key Path**: Full path to your SSH private key (e.g., `C:\Users\Carlos\.ssh\id_ed25519`)
 4. **Command Timeout (seconds)**: Maximum time to wait for command completion (default: 15 seconds, optional)

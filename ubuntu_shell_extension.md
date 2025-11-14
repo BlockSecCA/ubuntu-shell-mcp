@@ -43,7 +43,7 @@ ubuntu-shell-mcp/
   "user_config": {
     "ssh_host": {
       "title": "SSH Host",
-      "description": "Hostname or IP address of the Ubuntu server (e.g., 'ubuntupc' or '192.168.1.100')",
+      "description": "Hostname or IP address of the Ubuntu server (e.g., 'ubuntupc' or '192.168.1.XXX')",
       "type": "string",
       "required": true
     },
