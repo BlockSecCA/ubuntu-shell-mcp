@@ -2,7 +2,7 @@
 
 ## Directory Structure
 
-Create this structure in a new folder (e.g., `C:\Users\Carlos\OneDrive - AltoAzul Consulting Inc\code\ubuntu-shell-mcp`):
+Create this structure in a new folder (e.g., `C:\Users\YourName\OneDrive - YourCompany\code\ubuntu-shell-mcp`):
 
 ```
 ubuntu-shell-mcp/
@@ -24,7 +24,7 @@ ubuntu-shell-mcp/
   "version": "1.0.0",
   "description": "Execute bash commands on a remote Ubuntu server via SSH",
   "author": {
-    "name": "Carlos"
+    "name": "YourName"
   },
   "server": {
     "type": "node",
@@ -49,7 +49,7 @@ ubuntu-shell-mcp/
     },
     "ssh_user": {
       "title": "SSH Username",
-      "description": "Username for SSH connection (e.g., 'carlos')",
+      "description": "Username for SSH connection (e.g., 'your-username')",
       "type": "string",
       "required": true
     }
@@ -91,7 +91,7 @@ ubuntu-shell-mcp/
     "claude",
     "desktop-extension"
   ],
-  "author": "Carlos",
+  "author": "YourName",
   "license": "MIT"
 }
 ```
@@ -104,7 +104,7 @@ See the code artifact I'll create next.
 
 1. **Create the directory structure**:
    ```cmd
-   cd "C:\Users\Carlos\OneDrive - AltoAzul Consulting Inc\code"
+   cd "C:\Users\YourName\OneDrive - YourCompany\code"
    mkdir ubuntu-shell-mcp
    cd ubuntu-shell-mcp
    mkdir server
@@ -125,7 +125,7 @@ See the code artifact I'll create next.
 5. **Install in Claude Desktop**:
    - Double-click the generated `ubuntu-shell-mcp.mcpb` file
    - Claude Desktop will prompt for SSH configuration
-   - Enter: `ubuntupc` for host, `carlos` for user
+   - Enter: `ubuntupc` for host, `your-username` for user
 
 ## How It Works
 

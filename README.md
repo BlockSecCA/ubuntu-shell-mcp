@@ -98,7 +98,7 @@ graph TB
 
 ### Initial Connection (First Command)
 
-1. **User Input**: User asks Claude to execute a command (e.g., "list files in /home/carlos")
+1. **User Input**: User asks Claude to execute a command (e.g., "list files in /home/your-username")
 
 2. **Tool Invocation**: Claude sends JSON-RPC request:
 ```json
@@ -106,7 +106,7 @@ graph TB
   "method": "tools/call",
   "params": {
     "name": "bash",
-    "arguments": { "command": "ls -la /home/carlos" }
+    "arguments": { "command": "ls -la /home/your-username" }
   }
 }
 ```
@@ -200,8 +200,8 @@ This creates `ubuntu-shell-mcp-ssh2.mcpb` file.
 2. Claude Desktop will prompt for SSH configuration
 3. Enter:
    - **SSH Host**: `your-ubuntu-server` or `ubuntuserver`
-   - **SSH Username**: `carlos`
-   - **SSH Private Key Path**: `C:\Users\Carlos\.ssh\id_ed25519`
+   - **SSH Username**: `your-username`
+   - **SSH Private Key Path**: `C:\Users\YourName\.ssh\id_ed25519`
    - **Command Timeout**: `15` (or your preferred timeout in seconds)
 4. Restart Claude Desktop
 
@@ -218,8 +218,8 @@ Ask Claude to execute commands on your Ubuntu server:
 When installing the extension, you'll be prompted for:
 
 1. **SSH Host**: Hostname or IP address of the Ubuntu server (e.g., `your-ubuntu-server` or `ubuntupc`)
-2. **SSH Username**: Username for SSH connection (e.g., `carlos`)
-3. **SSH Private Key Path**: Full path to your SSH private key (e.g., `C:\Users\Carlos\.ssh\id_ed25519`)
+2. **SSH Username**: Username for SSH connection (e.g., `your-username`)
+3. **SSH Private Key Path**: Full path to your SSH private key (e.g., `C:\Users\YourName\.ssh\id_ed25519`)
 4. **Command Timeout (seconds)**: Maximum time to wait for command completion (default: 15 seconds, optional)
 
 ### Timeout Configuration
@@ -458,7 +458,7 @@ Contributions welcome! Please feel free to submit issues or pull requests.
 
 ## Author
 
-Carlos - BlockSecCA
+YourName - BlockSecCA
 
 ## Version History
 
