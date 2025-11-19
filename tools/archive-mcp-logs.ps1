@@ -1,12 +1,13 @@
 # archive-mcp-logs.ps1
-# Archives MCP log files by date into archive/ subfolder
+# Archives ALL Claude log files by date into archive/ subfolder
+# Supports both ISO timestamps (MCP logs) and simple timestamps (main.log, etc.)
 
 $logDir = "$env:APPDATA\Claude\logs"
 $archiveDir = "$logDir\archive"
 $stateFile = "$logDir\.mcp-archive-state.json"
 
-Write-Host "MCP Log Archiver" -ForegroundColor Cyan
-Write-Host "================`n" -ForegroundColor Cyan
+Write-Host "Claude Log Archiver" -ForegroundColor Cyan
+Write-Host "===================`n" -ForegroundColor Cyan
 
 # Create archive directory if it doesn't exist
 if (-not (Test-Path $archiveDir)) {
@@ -44,15 +45,29 @@ foreach ($logFile in $logFiles) {
         continue
     }
     
-    # Group by date
+    # Group by date - handle both timestamp formats
     $byDate = @{}
+    $skippedLines = 0
+    
     foreach ($line in $newLines) {
-        if ($line -match '^(\d{4}-\d{2}-\d{2})') {
+        $date = $null
+        
+        # Try ISO format first: 2025-11-12T16:19:01.310Z
+        if ($line -match '^(\d{4}-\d{2}-\d{2})T') {
             $date = $matches[1]
+        }
+        # Try simple format: 2025-11-12 11:18:59
+        elseif ($line -match '^(\d{4}-\d{2}-\d{2})\s') {
+            $date = $matches[1]
+        }
+        
+        if ($date) {
             if (-not $byDate.ContainsKey($date)) {
                 $byDate[$date] = @()
             }
             $byDate[$date] += $line
+        } else {
+            $skippedLines++
         }
     }
     
@@ -77,7 +92,14 @@ foreach ($logFile in $logFiles) {
     
     $totalProcessed += $newLines.Count
     $totalDates += $byDate.Keys.Count
-    Write-Host "  $logName - $($newLines.Count) lines -> $($byDate.Keys.Count) dates" -ForegroundColor Green
+    
+    $statusMsg = "  $logName - $($newLines.Count) lines -> $($byDate.Keys.Count) dates"
+    if ($skippedLines -gt 0) {
+        $statusMsg += " ($skippedLines skipped)"
+        Write-Host $statusMsg -ForegroundColor Yellow
+    } else {
+        Write-Host $statusMsg -ForegroundColor Green
+    }
 }
 
 # Save state
