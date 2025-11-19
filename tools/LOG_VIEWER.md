@@ -12,6 +12,7 @@ The MCP Log Viewer is a standalone HTML application that helps you understand wh
 - Total log entries count
 - Breakdown by type: Client Messages, Server Messages, Commands, Lifecycle Events
 - Quick overview of your session activity
+- **Session Timeline**: Shows start time, end time, and total duration
 
 ### 🔍 Smart Filtering
 - **All**: View all entries in chronological order
@@ -19,6 +20,11 @@ The MCP Log Viewer is a standalone HTML application that helps you understand wh
 - **Client**: Messages sent from Claude to the MCP server
 - **Server**: Responses from the MCP server to Claude
 - **Commands Only**: Shows bash commands paired with their results (combined view)
+
+### 🔀 Sort Options
+- **Newest First (↓)**: Default - most recent entries at the top
+- **Oldest First (↑)**: Chronological order from session start
+- Applies to all filters including combined command view
 
 ### 🎨 Color-Coded Display
 - 🔵 Blue: Client messages (requests from Claude)
@@ -32,8 +38,13 @@ The MCP Log Viewer is a standalone HTML application that helps you understand wh
 - Full JSON data viewer for protocol messages
 - Request/Response ID tracking for matching pairs
 
+### 🔄 File Refresh
+- **Refresh Button**: Reload the current log file to see new entries
+- Useful for monitoring active sessions
+- No need to re-upload the file
+
 ### ⚡ Performance
-- Handles log files up to 1MB
+- Handles log files up to **5MB**
 - Instant filtering and search
 - No server required - runs entirely in your browser
 
@@ -48,22 +59,34 @@ MCP server logs are stored in Claude Desktop's logs directory:
 C:\Users\[YourUsername]\AppData\Roaming\Claude\logs\mcp-server-ubuntu-shell-mcp.log
 ```
 
+Or use the environment variable: `%APPDATA%\Claude\logs\mcp-server-ubuntu-shell-mcp.log`
+
+**For Archived Logs:**
+```
+%APPDATA%\Claude\logs\archive\mcp-server-ubuntu-shell-mcp-2024-10-31.log
+```
+
+See [Log Rotation Scripts](LOG_ROTATION_README.md) for archiving by date.
+
 ### Opening the Log Viewer
 
 1. **Open the HTML file** in your browser:
-   - Navigate to `ubuntu-shell-mcp-ssh2/tools/`
+   - Navigate to `ubuntu-shell-mcp/tools/`
    - Double-click `mcp-log-viewer.html`
    - Or drag and drop it into your browser
 
 2. **Upload your log file**:
    - Click the "Browse..." button
-   - Select your `mcp-server-ubuntu-shell-mcp.log` file
+   - Navigate to `%APPDATA%\Claude\logs` (or archived logs)
+   - Select your log file
    - The viewer will parse and display it instantly
 
 3. **Explore your logs**:
    - Use the filter buttons to focus on specific types
+   - Toggle sort order (newest/oldest first)
    - Search for specific commands, errors, or text
    - Click entries to see detailed information
+   - Use refresh button to reload for new entries
 
 ## Understanding the Log Structure
 
@@ -158,6 +181,21 @@ The "Commands Only" filter automatically pairs these together.
    - Look for "Shutting down server..." messages
    - Verify graceful closure
 
+### Analyzing Time Periods
+
+**With Log Rotation:**
+1. Archive your logs by date using `archive-logs.bat`
+2. Load archived logs for specific dates
+3. Use the session timeline to see when activity occurred
+4. Sort by oldest/newest to understand chronological flow
+
+**Example Workflow:**
+- "What did we build on October 31st?"
+- Load: `mcp-server-ubuntu-shell-mcp-2024-10-31.log`
+- Filter: "Commands Only"
+- Sort: "Oldest First" to see chronological progression
+- Review: Commands executed during that session
+
 ### Audit Trail
 
 The log viewer provides a complete audit trail of:
@@ -208,6 +246,13 @@ Search examples:
    - Commands that could be combined
    - Unnecessary operations
 
+### Working with Archived Logs
+
+1. Use log rotation scripts to archive by date
+2. Load specific dated archives for analysis
+3. Session timeline shows time range in that archive
+4. Sort by "Oldest First" to see session progression
+
 ## Technical Details
 
 ### Browser Compatibility
@@ -232,10 +277,10 @@ Requirements:
 
 ### File Size Limits
 
-- Maximum file size: 1MB
+- Maximum file size: **5MB**
 - Larger files will be rejected with an alert
 - Most MCP sessions produce logs well under this limit
-- If you need to analyze larger files, manually split them
+- For larger logs, use archived daily logs instead
 
 ### Performance
 
@@ -243,12 +288,14 @@ Requirements:
 - Filtering: Real-time as you type
 - Search: Instant across all entries
 - Memory: ~2-3x the file size in browser memory
+- Sort: Instant toggle between orders
 
 ## Troubleshooting
 
-**"File is too large! Maximum size is 1MB"**
-- Your log file exceeds 1MB
-- Solution: Split the file or analyze only recent entries
+**"File is too large! Maximum size is 5MB"**
+- Your log file exceeds 5MB
+- Solution: Use log rotation to create daily archives
+- Or: Manually split the file
 
 **No entries appear after upload**
 - Check browser console (F12) for parsing errors
@@ -265,6 +312,11 @@ Requirements:
 - Check console for JavaScript errors
 - Try refreshing the page
 
+**Refresh button not working**
+- Make sure you uploaded a file first
+- Browser may have lost reference to the file
+- Re-upload the file if needed
+
 ## Integration with Development Workflow
 
 ### During Development
@@ -272,8 +324,16 @@ Requirements:
 1. Keep log viewer open in a browser tab
 2. Make changes to your MCP server
 3. Test commands in Claude
-4. Reload log file in viewer to see latest entries
+4. Click refresh button to see latest entries
 5. Analyze behavior and debug issues
+
+### With Log Rotation
+
+1. Work normally during the day
+2. Run `archive-logs.bat` at end of day/week
+3. Load specific dated archives for analysis
+4. Use timeline to understand session boundaries
+5. Keep archives for 30 days
 
 ### CI/CD Pipeline
 
@@ -282,6 +342,13 @@ The log viewer can be used in automated testing:
 2. Use headless browser to load logs
 3. Parse and validate expected patterns
 4. Fail build if errors detected
+
+## Related Tools
+
+- **Log Rotation Scripts**: See [LOG_ROTATION_README.md](LOG_ROTATION_README.md)
+  - Archive logs by date
+  - Cleanup old archives
+  - Keep log directory organized
 
 ## Future Enhancements
 
@@ -294,6 +361,7 @@ Potential improvements for future versions:
 - Command performance metrics
 - Error rate graphs
 - Session statistics
+- Date/time range picker
 
 ## License
 
