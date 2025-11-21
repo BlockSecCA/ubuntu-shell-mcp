@@ -1,6 +1,6 @@
 # ⚠️ DEPRECATED - This Repository Has Been Superseded
 
-This repository (`ubuntu-shell-mcp`) has been superseded by **generic-ssh-mcp**, which provides:
+This repository (`ubuntu-shell-mcp`) has been superseded by **[generic-ssh-mcp](https://github.com/BlockSecCA/generic-ssh-mcp)**, which provides:
 
 - **Multiple system support**: Connect to multiple SSH servers simultaneously with unique tool names
 - **Configurable command wrappers**: Optional wrappers like `srt`, `timeout`, or direct bash execution
@@ -10,20 +10,17 @@ This repository (`ubuntu-shell-mcp`) has been superseded by **generic-ssh-mcp**,
 
 ## Migration Path
 
-The new generic-ssh-mcp is not yet published on GitHub. Once published, migration will involve:
-
-1. Uninstall this extension from Claude Desktop
-2. Install generic-ssh-mcp
-3. Configure for your systems using the build script
-4. Deploy multiple instances if needed
+1. Clone the new repository: `git clone https://github.com/BlockSecCA/generic-ssh-mcp.git`
+2. Review the README and build scripts
+3. Uninstall this extension from Claude Desktop
+4. Build and install generic-ssh-mcp for your systems
+5. Configure multiple instances if needed
 
 ## Current Status
 
-**This repository remains functional** but will not receive further updates. All future development happens in generic-ssh-mcp.
+**This repository remains functional** but will not receive further updates. All future development happens in **[generic-ssh-mcp](https://github.com/BlockSecCA/generic-ssh-mcp)**.
 
-## For Questions
-
-Contact the maintainer for migration guidance when generic-ssh-mcp is published.
+---
 
 ---
 
