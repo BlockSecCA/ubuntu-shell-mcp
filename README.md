@@ -1,3 +1,32 @@
+# ⚠️ DEPRECATED - This Repository Has Been Superseded
+
+This repository (`ubuntu-shell-mcp`) has been superseded by **generic-ssh-mcp**, which provides:
+
+- **Multiple system support**: Connect to multiple SSH servers simultaneously with unique tool names
+- **Configurable command wrappers**: Optional wrappers like `srt`, `timeout`, or direct bash execution
+- **Flexible naming**: Tool names follow `{wrapper}-{system}` pattern (e.g., `ssh-ubuntupc`, `srt-prodserver`)
+- **Build script automation**: Generate multiple `.mcpb` files from templates
+- **Same SSH2 performance**: Maintains persistent connections and all performance benefits
+
+## Migration Path
+
+The new generic-ssh-mcp is not yet published on GitHub. Once published, migration will involve:
+
+1. Uninstall this extension from Claude Desktop
+2. Install generic-ssh-mcp
+3. Configure for your systems using the build script
+4. Deploy multiple instances if needed
+
+## Current Status
+
+**This repository remains functional** but will not receive further updates. All future development happens in generic-ssh-mcp.
+
+## For Questions
+
+Contact the maintainer for migration guidance when generic-ssh-mcp is published.
+
+---
+
 # Ubuntu Shell MCP Extension (SSH2 Version)
 
 Execute bash commands on a remote Ubuntu server from Claude Desktop via persistent SSH connection.
@@ -362,7 +391,7 @@ ubuntu-shell-mcp-ssh2/
 │   └── index.js          # MCP server implementation with ssh2
 ├── tools/
 │   ├── mcp-log-viewer.html  # Visual log analyzer (see below)
-│   └── LOG_VIEWER.md        # Log viewer documentation
+│   ├── mcp-log-viewer.html  # Visual log analyzer
 ├── README.md             # This file
 └── LICENSE               # MIT License
 ```
@@ -395,7 +424,7 @@ A visual tool for analyzing MCP server logs. Located in `tools/mcp-log-viewer.ht
 - Analyze performance (check timestamps between request/response)
 - Audit trail (see all executed commands with results)
 
-See [tools/LOG_VIEWER.md](tools/LOG_VIEWER.md) for detailed documentation.
+See tools README for detailed documentation on all available tools.
 
 ## Development
 
